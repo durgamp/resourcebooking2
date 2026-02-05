@@ -1,21 +1,43 @@
-
 import { Reactor, Booking, Downtime } from '../types';
-
-const API_BASE = '/api'; // Placeholder for .NET Backend URL
+import { supabase } from './supabaseClient';
 
 export const api = {
   fetchReactors: async (): Promise<Reactor[]> => {
-    // In a real environment: return (await fetch(`${API_BASE}/reactor`)).json();
-    return []; // Handled by state in App.tsx for mock purposes
+    const { data, error } = await supabase
+      .from('reactors')
+      .select('*');
+
+    if (error) throw error;
+    return data as Reactor[];
   },
-  
+
   saveBooking: async (booking: Booking): Promise<void> => {
-    console.info("Dispatching to .NET Backend:", booking);
-    // await fetch(`${API_BASE}/booking`, { method: 'POST', body: JSON.stringify(booking) });
+    const { error } = await supabase
+      .from('bookings')
+      .upsert({
+        id: booking.id,
+        reactorSerialNo: booking.reactorSerialNo,
+        team: booking.team,
+        productName: booking.productName,
+        stage: booking.stage,
+        batchNumber: booking.batchNumber,
+        operation: booking.operation,
+        startDateTime: booking.startDateTime.toISOString(),
+        endDateTime: booking.endDateTime.toISOString(),
+        status: booking.status
+      });
+
+    if (error) throw error;
   },
 
   deleteBooking: async (id: string, isActual: boolean): Promise<void> => {
     if (isActual) throw new Error("Immutable record");
-    console.info("Deleting from .NET Backend:", id);
+
+    const { error } = await supabase
+      .from('bookings')
+      .delete()
+      .eq('id', id);
+
+    if (error) throw error;
   }
 };
